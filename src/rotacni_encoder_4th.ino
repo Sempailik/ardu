@@ -2,6 +2,7 @@
 //dodelat:
 //udelat podminku kdzy hodnota milis bude vetsi nez XXXXXX tak se vynuluje aby nedoslo k preteceni
 //u MALE rychlosti = malo pulzu, nepocitat pulzy ale pocitat cas mezi pulzy je to presnejsi
+//predelat casovani pomoci metody SET a EXPIRED !!!
 
  /*
   *  Vypocet rychlosti:

@@ -2,7 +2,7 @@
 
 //udelat podminku kdzy hodnota milis bude vetsi nez XXXXXX tak se vynuluje aby nedoslo k preteceni
 //u MALE rychlosti = malo pulzu, nepocitat pulzy ale pocitat cas mezi pulzy je to presnejsi
-
+//
  /*
   *  Vypocet rychlosti:
   *  obvod kruhu = 2 * Pi * r (remenice ma r= 0,015m)

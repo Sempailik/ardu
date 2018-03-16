@@ -19,6 +19,7 @@
   *  rychlost = ( pocetPulzu * pulz_na_metr * 1000.0) / (uplynulyCas) ; //snad rychlejsi vypocet, protoze misto deleni nasobim
   *
   */
+#include "interval.h"
 
 #define pulz_na_metr 0.00047123889803
 #define pinKanalA 2         //pin 2
@@ -34,8 +35,10 @@
 //#define tlacitko_stop 7      //pin 7
 #define dobaPoKtereZhasneLed 500 //ms
 #define casMereni  120000 //cas po ktery se bude merit v milisekundach 120000 = 120s = 2min
-#define periodaMereni 4  //4ms perioda mereni a odesilani na seriovy port ve vysledku je to 5ms
+#define periodaMereni 5  //4ms perioda mereni a odesilani na seriovy port ve vysledku je to 5ms
+#define rychlost_zmeny_mereni 2.1 //rychlost po ktere se zacne merit poctem pulzu, do te doby merit  periodou mezi pulzy
 
+Interval timer,timer_led;
 
 //short int power_led = 13;         //pin 13
 //short int strobe_led = 12;        //pin 12
@@ -45,10 +48,6 @@
 //short int tlacitko_previjeni = 8; //pin 8
 //short int tlacitko_stop = 7;      //pin 7
 
-
-// kalibrační proměnná, u senzoru YF-S201
-// je to 4,5 pulzu za vteřinu pro 1 litr za minutu
-//const float kalibrFaktor = 1; // 4.5
 
 // pomocné proměnné
 short int flag_interrupt = 0;
@@ -72,13 +71,13 @@ unsigned short povolen_stisk = 1;
 char prijato;
 short int synchronizace = 0;
 unsigned short flag_merit = 0;
-unsigned short flag_only_one = 0;
 unsigned short stav_tlacitko_previjeni = 0;
 unsigned short stav_tlacitko_stop = 0;
 bool predchoziA = false;
 bool aktualniA = false;
 bool predchoziB = false;
 bool aktualniB = false;
+unsigned long long cas_pulzu = 0;
 
 
 void setup() {
@@ -109,6 +108,7 @@ void setup() {
 
 }
 void loop() {
+
   // místo pro další příkazy
   digitalWrite(power_led, HIGH);
 
@@ -120,16 +120,24 @@ void loop() {
     cas_zacatku_mereni = millis();
     delka = 0;
     celkovy_pocet_pulzu = 0;
+    char temp[25];
+    sprintf(temp,"mereni probiha po %i ms",periodaMereni);
+    Serial.println(temp);
+    Serial.println("; rychlost; synchronizace; pocet pulzu; uplynuly cas;");
+
+    timer.set(periodaMereni);
+    timer_led.set(dobaPoKtereZhasneLed);
   }
   else if(prijato=='p')
   {
    // digitalWrite(led, LOW);
     flag_merit = 0;
-    flag_only_one = 0;
+
   }
 
 //ZHASNUTI SYNCHRONIZACNI LED PO DOBE
-  if ((millis() - cas_zacatku_mereni) > dobaPoKtereZhasneLed)
+  //if ((millis() - cas_zacatku_mereni) > dobaPoKtereZhasneLed)
+  if(timer_led.expired())
   {
     digitalWrite(strobe_led, LOW);
     synchronizace=0;
@@ -142,10 +150,12 @@ void loop() {
   }
 
   // pokud je rozdíl posledního uloženého času a aktuálního
-  unsigned long uplynulyCas = (millis() - staryCas);
-  if ( (uplynulyCas > periodaMereni) && flag_merit  )
-  {
 
+
+  //if ( (uplynulyCas > periodaMereni) && flag_merit  )
+  if ( (timer.expired()) && flag_merit  )
+  {
+    unsigned long uplynulyCas = (millis() - staryCas);
     short int my_pocetPulzu = 0;
 
     do                              //bezpecne predani hodnot z pulzru, tak aby nedoslo zrovna ke zmene
@@ -153,12 +163,10 @@ void loop() {
       flag_interrupt=0;             //tim padem neprijdu o data z pulzru
       my_pocetPulzu = pocetPulzu;
       celkovy_pocet_pulzu += pocetPulzu;
+      pocetPulzu = 0;
     } while (flag_interrupt==1);
 
-     // nulování počítadla pulzů
-    pocetPulzu = 0;
-
-    // vypnutí detekce přerušení po dobu výpočtu a tisku výsledku
+      // vypnutí detekce přerušení po dobu výpočtu a tisku výsledku
     //detachInterrupt(pinPreruseni);
 
     // výpočet průtoku podle počtu pulzů za daný čas
@@ -182,23 +190,13 @@ void loop() {
     dtostrf(rychlost, 4, 2, rychlost_temp);
     //dtostrf(otacky, 5, 2, otacky_temp);
 
-    if(!flag_only_one)
-    {
-      char temp[25];
-      sprintf(temp,"mereni probiha po %i ms",periodaMereni);
-      Serial.println(temp);
-      Serial.println("; rychlost; synchronizace; pocet pulzu; uplynuly cas;");
-      flag_only_one = 1;
-    }
-
-
     if(smer==1)
       {
-        delka -= 9 * my_pocetPulzu; //
+        delka -= 47 * my_pocetPulzu; //
       }
       else
       {
-        delka += 9 * my_pocetPulzu; //
+        delka += 47 * my_pocetPulzu; //
       }
 /*
     char tmp_cpp[6];
@@ -216,7 +214,7 @@ void loop() {
     Serial.print(tmp);
     Serial.print(celkovy_pocet_pulzu);
     Serial.print(";");
-    Serial.println(delka);
+    Serial.println((double)delka/1000);
     //Serial.println(tmp_cpp);
 
     // uložení aktuálního času pro zahájení dalšího měření
@@ -226,6 +224,7 @@ void loop() {
     // povolení detekce přerušení pro nové měření
     //attachInterrupt(pinPreruseni, prictiPulz, FALLING);
 
+    timer.set(periodaMereni);
   }
   else
   {
@@ -279,12 +278,7 @@ void loop() {
   {
     stisknuto = HIGH;
     Serial.println("STOP");
-    Serial.println("STOP");
-    Serial.println("STOP");
-    Serial.println("STOP");
-    Serial.println("STOP");
   }
-
 
   // pokud je stisknuto, do proměnné cas_stisku_tlacitka se uloží čas stisku a zakáže se další stisknutí
   if(stisknuto == HIGH )
@@ -318,57 +312,58 @@ void prictiPulz() {
 
        if((aktualniA == false) && (predchoziA == true))
        {
-        if((aktualniB == false) && (predchoziB == false))
-        {
-          smer = 1;
-        }
-        else if((aktualniB == true) && (predchoziB == true))
-        {
-          smer = 0;
-        }
+          if((aktualniB == false) && (predchoziB == false))
+          {
+            smer = 1;
+          }
+          else if((aktualniB == true) && (predchoziB == true))
+          {
+            smer = 0;
+          }
        }
        else if((aktualniA == false) && (predchoziA == false))
        {
-        if((aktualniB == true) && (predchoziB == false))
-        {
-          smer = 1;
-        }
-        else if((aktualniB == false) && (predchoziB == true))
-        {
-          smer = 0;
-        }
+          if((aktualniB == true) && (predchoziB == false))
+          {
+            smer = 1;
+          }
+          else if((aktualniB == false) && (predchoziB == true))
+          {
+            smer = 0;
+          }
        }
        else if((aktualniA == true) && (predchoziA == false))
        {
-        if((aktualniB == true) && (predchoziB == true))
-        {
-          smer = 1;
-        }
-        else if((aktualniB == false) && (predchoziB == false))
-        {
-          smer = 0;
-        }
+          if((aktualniB == true) && (predchoziB == true))
+          {
+            smer = 1;
+          }
+          else if((aktualniB == false) && (predchoziB == false))
+          {
+            smer = 0;
+          }
        }
        else if((aktualniA == true) && (predchoziA == true))
        {
-        if((aktualniB == false) && (predchoziB == true))
-        {
-          smer = 1;
-        }
-        else if((aktualniB == true) && (predchoziB == false))
-        {
-          smer = 0;
-        }
+          if((aktualniB == false) && (predchoziB == true))
+          {
+            smer = 1;
+          }
+          else if((aktualniB == true) && (predchoziB == false))
+          {
+            smer = 0;
+          }
        }
 
   predchoziA = aktualniA;
   predchoziB = aktualniB;
-}
 
-
-/*
-void prictiPulzB() {
-  // inkrementace čítače pulzů
-  pocetPulzuB++;
+  /*
+  unsigned long currentMillis = millis();
+  if ((unsigned long)(currentMillis - previousMillis) >= interval)
+  {
+    previousMillis = currentMillis;
+  }
+  */
+  cas_pulzu = micros();
 }
-*/

@@ -77,8 +77,10 @@ bool predchoziA = false;
 bool aktualniA = false;
 bool predchoziB = false;
 bool aktualniB = false;
-unsigned long long cas_pulzu = 0;
-
+unsigned long cas_pulzu = 0;
+unsigned long predchozi_cas_pulzu = 0;
+unsigned long delka_pulzu = 0;
+float delkova_rychlost = 0;
 
 void setup() {
   // komunikace po sériové lince rychlostí 9600 baud
@@ -198,6 +200,17 @@ void loop() {
       {
         delka += 47 * my_pocetPulzu; //
       }
+
+    delkova_rychlost = pulz_na_metr / (delka_pulzu/1000000.0);
+    if(smer==1)
+    {
+      if (delkova_rychlost != 0) delkova_rychlost *= -1;
+    }
+    if( 0 == (int)(rychlost*100) )
+    {
+      delkova_rychlost = 0;
+    }
+
 /*
     char tmp_cpp[6];
     ltoa(celkovy_pocet_pulzu, tmp_cpp, 5);
@@ -214,7 +227,9 @@ void loop() {
     Serial.print(tmp);
     Serial.print(celkovy_pocet_pulzu);
     Serial.print(";");
-    Serial.println((double)delka/1000);
+    Serial.print((double)delka/1000);
+    Serial.print(";");
+    Serial.println(delkova_rychlost);
     //Serial.println(tmp_cpp);
 
     // uložení aktuálního času pro zahájení dalšího měření
@@ -366,4 +381,7 @@ void prictiPulz() {
   }
   */
   cas_pulzu = micros();
+  delka_pulzu = cas_pulzu - predchozi_cas_pulzu;
+  predchozi_cas_pulzu = cas_pulzu;
+
 }

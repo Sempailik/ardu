@@ -88,7 +88,6 @@ unsigned long celkova_delka_pulzu = 0;
 unsigned long delka_pulzu = 0;
 float delkova_rychlost = 0;
 float tmp_delkova_rychlost = 0;
-unsigned short pompulz = 0;
 short int my_pocetPulzu = 0;
 
 void setup() {
@@ -174,20 +173,8 @@ void loop() {
     do                              //bezpecne predani hodnot z pulzru, tak aby nedoslo zrovna ke zmene
     {                               //hodnoty, pri predavani nebo vypoctu a neni potreba zakazovat preruseni
       flag_interrupt=0;             //tim padem neprijdu o data z pulzru
-/*
-      if(pompulz > 3)
-      {
-        my_pocetPulzu = pocetPulzu;
-        pompulz = 0;
-      }
-      else
-      {
-        my_pocetPulzu = 0;
-        pompulz = 0;
-      }
-*/
+
       my_pocetPulzu = pocetPulzu;
-      pompulz = 0;
 
       celkovy_pocet_pulzu += pocetPulzu;
       tmp_delkova_rychlost = delkova_rychlost;
@@ -387,7 +374,6 @@ void prictiPulz() {
   // inkrementace čítače pulzů
   flag_interrupt = 1;
   pocetPulzu++;
-  pompulz++;
 
   aktualniA = (bool)digitalRead(pinKanalA);
   aktualniB = (bool)digitalRead(pinKanalB);

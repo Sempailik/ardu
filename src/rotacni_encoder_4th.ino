@@ -119,7 +119,6 @@ void setup() {
 }
 void loop() {
 
-
   // místo pro další příkazy
   digitalWrite(power_led, HIGH);
 

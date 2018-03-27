@@ -119,6 +119,7 @@ void setup() {
 }
 void loop() {
 
+
   // místo pro další příkazy
   digitalWrite(power_led, HIGH);
 
@@ -133,7 +134,7 @@ void loop() {
     char temp[25];
     sprintf(temp,"mereni probiha po %i ms",periodaMereni);
     Serial.println(temp);
-    Serial.println("; rychlost; synchronizace; pocet pulzu; uplynuly cas;");
+    Serial.println("; rychlost; synchronizace; delkova_rychlost; delka;");
 
     timer.set(periodaMereni);
     timer_led.set(dobaPoKtereZhasneLed);
@@ -201,19 +202,20 @@ void loop() {
       rychlost *= korekce1;
     }
 
+
     if(smer==1)
       {
         if (rychlost != 0)rychlost *= -1;
       }
 
 
-
+/*
     char rychlost_temp[6];
     //char otacky_temp[7];
-    /* 4 is mininum width, 2 is precision; float value is copied onto rychlost_temp*/
+    // 4 is mininum width, 2 is precision; float value is copied onto rychlost_temp
     dtostrf(rychlost, 4, 2, rychlost_temp);
     //dtostrf(otacky, 5, 2, otacky_temp);
-
+*/
     if(smer==1)
       {
         delka -= 47 * my_pocetPulzu; //
@@ -257,7 +259,7 @@ void loop() {
     float i = (double)delka/1000;
     dtostrf(i, 4, 2, delka_tmp);
 */
-    char tmp[40];
+//    char tmp[40];
     //sprintf(tmp, "r:%s; s:%hi; d:%i; p:%i; cp:%i; c:%i;", rychlost_temp, synchronizace, delka, my_pocetPulzu, celkovy_pocet_pulzu, uplynulyCas);
     //sprintf(tmp, ";%s;%hi;%i;%i;", rychlost_temp, synchronizace, my_pocetPulzu, uplynulyCas);
 //    sprintf(tmp, ";%s;%hi;%i;%i;", rychlost_temp, synchronizace, my_pocetPulzu, uplynulyCas);
@@ -266,12 +268,15 @@ void loop() {
 
     Serial.println(String("") + ";" + rychlost + ";"
                                     + synchronizace +";"
-                                    + my_pocetPulzu +";"
-                                    + uplynulyCas +";"
-                                    + celkovy_pocet_pulzu +";"
-                                    + ((double)delka/1000) +";"
                                     + tmp_delkova_rychlost +";"
+                                    //+ my_pocetPulzu +";"
+                                    //+ uplynulyCas +";"
+                                    //+ celkovy_pocet_pulzu +";"
+                                    + ((double)delka/1000) +";"
+
                                   );
+
+
 /*
     Serial.print(tmp);
     Serial.print(celkovy_pocet_pulzu);

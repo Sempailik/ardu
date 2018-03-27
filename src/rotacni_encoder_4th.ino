@@ -115,7 +115,6 @@ void setup() {
   //attachInterrupt(pinPreruseni, prictiPulz, FALLING);
   attachInterrupt(pinPreruseni, prictiPulz, CHANGE);
   attachInterrupt(pinPreruseniB, prictiPulz, CHANGE);
-
 }
 void loop() {
 

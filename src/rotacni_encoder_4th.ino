@@ -56,9 +56,9 @@ Interval timer,timer_led;
 
 // pomocné proměnné
 short int flag_interrupt = 0;
-int velikost_pwm = 234;  //hodnota  0-255,  60%=153, 70%=178, 80%=204, 90%=229,
+int velikost_pwm = 102;  //hodnota  0-255, 40%=102, 60%=153, 70%=178, 80%=204, 90%=229,
 int velikost_pwm_mene = 160;
-int velikost_pwm_previjeni = 229;
+int velikost_pwm_previjeni = 90;//229;
 volatile short int pocetPulzu = 0;
 // volatile byte pocetPulzuB = 0;
 volatile byte smer = 0;
@@ -123,7 +123,7 @@ void loop() {
 
   if ((prijato=='s') && (!flag_merit) )
   {
-    digitalWrite(strobe_led, HIGH); //SYNCHRONIZACNI LED
+    digitalWrite(strobe_led, LOW); //SYNCHRONIZACNI LED
     synchronizace = 1;
     flag_merit = 1;
     cas_zacatku_mereni = millis();
@@ -148,7 +148,7 @@ void loop() {
   //if ((millis() - cas_zacatku_mereni) > dobaPoKtereZhasneLed)
   if(timer_led.expired())
   {
-    digitalWrite(strobe_led, LOW);
+    digitalWrite(strobe_led, HIGH);
     synchronizace=0;
   }
 

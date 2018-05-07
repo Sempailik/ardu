@@ -56,9 +56,9 @@ Interval timer,timer_led;
 
 // pomocné proměnné
 short int flag_interrupt = 0;
-int velikost_pwm = 102;  //hodnota  0-255, 40%=102, 60%=153, 70%=178, 80%=204, 90%=229,
+int velikost_pwm = 60;  //hodnota  0-255, 30%=76 40%=102, 60%=153, 70%=178, 80%=204, 90%=229,
 int velikost_pwm_mene = 160;
-int velikost_pwm_previjeni = 90;//229;
+int velikost_pwm_previjeni = 153;//229;
 volatile short int pocetPulzu = 0;
 // volatile byte pocetPulzuB = 0;
 volatile byte smer = 0;
@@ -123,7 +123,7 @@ void loop() {
 
   if ((prijato=='s') && (!flag_merit) )
   {
-    digitalWrite(strobe_led, LOW); //SYNCHRONIZACNI LED
+    digitalWrite(strobe_led, HIGH); //SYNCHRONIZACNI LED
     synchronizace = 1;
     flag_merit = 1;
     cas_zacatku_mereni = millis();
@@ -148,7 +148,7 @@ void loop() {
   //if ((millis() - cas_zacatku_mereni) > dobaPoKtereZhasneLed)
   if(timer_led.expired())
   {
-    digitalWrite(strobe_led, HIGH);
+    digitalWrite(strobe_led, LOW);
     synchronizace=0;
   }
 
@@ -228,11 +228,12 @@ void loop() {
     //tmp_delkova_rychlost = (pulz_na_metr_per_mil) / (delka_pulzu);
     float tmp_cas_pulzu = tmp_celkova_delka_pulzu / my_pocetPulzu;
     tmp_delkova_rychlost = (pulz_na_metr_per_mil) / (tmp_cas_pulzu);
+/*
     if((korekcni_hranice_spodni < tmp_delkova_rychlost) && (tmp_delkova_rychlost < korekcni_hranice))
     {
       tmp_delkova_rychlost *= korekce2;
     }
-
+*/
     if(smer==1)
     {
       if (tmp_delkova_rychlost != 0) tmp_delkova_rychlost *= -1;
@@ -270,7 +271,7 @@ void loop() {
                                     //+ my_pocetPulzu +";"
                                     //+ uplynulyCas +";"
                                     //+ celkovy_pocet_pulzu +";"
-                                    + ((double)delka/1000) +";"
+                                    + ((double)delka/100000) +";"
 
                                   );
 

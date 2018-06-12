@@ -10,7 +10,6 @@
   *  obvod kruhu = 0,09424777m
   *  1 metr / obvod kruhu = otacky  => 1 / 0,09424777 = 10,610329
   *  otacky * pocet pulzu na otacku =>  10,610329 * 200 = 2122,06590789 pulzu na 1m
-  *  draha na 1 pulz 1 / 2122.06590789 => 0,00047123889803 pulz/m
   *
   *  pulz_na_metr = 0.00047123889803
   *

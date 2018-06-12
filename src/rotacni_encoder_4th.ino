@@ -1,7 +1,6 @@
 // Arduino rotacni encoder
 //dodelat:
 //udelat podminku kdzy hodnota milis bude vetsi nez XXXXXX tak se vynuluje aby nedoslo k preteceni
-//u MALE rychlosti = malo pulzu, nepocitat pulzy ale pocitat cas mezi pulzy je to presnejsi
 //predelat casovani pomoci metody SET a EXPIRED !!!
 
  /*
@@ -21,6 +20,7 @@
   */
 #include "interval.h"
 
+#define version 1.01
 #define pulz_na_metr 0.00047123889803
 #define pulz_na_metr_per_mil 471.23889803846
 #define pinKanalA 2         //pin 2
@@ -34,8 +34,9 @@
 #define motor 9             //pin 9
 #define tlacitko_previjeni 8 //pin 8
 //#define tlacitko_stop 7      //pin 7
-#define dobaPoKtereZhasneLed 500 //ms
-#define casMereni  120000 //cas po ktery se bude merit v milisekundach 120000 = 120s = 2min
+#define dobaPoKtereRozsvitiLed 500 //ms
+#define dobaPoKtereZhasneLed 1000 //ms
+#define casMereni  240000 //cas po ktery se bude merit v milisekundach 240000 = 240s = 4min
 #define periodaMereni 10  //4ms perioda mereni a odesilani na seriovy port ve vysledku je to 5ms
 #define rychlost_zmeny_mereni 2.1 //rychlost po ktere se zacne merit poctem pulzu, do te doby merit  periodou mezi pulzy
 #define korekce1 1.0575   //korekce do rychlosti 0.9m/s je 5.75% = 1.0575
@@ -43,20 +44,13 @@
 #define korekcni_hranice 0.8
 #define korekcni_hranice_spodni 0.25
 
-Interval timer,timer_led;
-
-//short int power_led = 13;         //pin 13
-//short int strobe_led = 12;        //pin 12
-//short int previjeni_led = 11;     //pin 11
-//short int mereni_led = 10;        //pin 10
-//short int motor = 9;              //pin 9
-//short int tlacitko_previjeni = 8; //pin 8
-//short int tlacitko_stop = 7;      //pin 7
-
+Interval timer, timer_strobe_Led_ON, timer_strobe_Led_OFF;
 
 // pomocné proměnné
 short int flag_interrupt = 0;
-int velikost_pwm = 60;  //hodnota  0-255, 30%=76 40%=102, 60%=153, 70%=178, 80%=204, 90%=229,
+// PWM hodnota  0-255,
+// 10%=25, 20%=51, 30%=76, 40%=102, 50%=127, 60%=153, 70%=178, 80%=204, 90%=229,
+int velikost_pwm = 60;
 int velikost_pwm_mene = 160;
 int velikost_pwm_previjeni = 153;//229;
 volatile short int pocetPulzu = 0;
@@ -123,19 +117,20 @@ void loop() {
 
   if ((prijato=='s') && (!flag_merit) )
   {
-    digitalWrite(strobe_led, HIGH); //SYNCHRONIZACNI LED
-    synchronizace = 1;
     flag_merit = 1;
     cas_zacatku_mereni = millis();
     delka = 0;
     celkovy_pocet_pulzu = 0;
     char temp[25];
+    Serial.print("verze prog.:");
+    Serial.println(version);
     sprintf(temp,"mereni probiha po %i ms",periodaMereni);
     Serial.println(temp);
     Serial.println("; rychlost; synchronizace; delkova_rychlost; delka;");
 
     timer.set(periodaMereni);
-    timer_led.set(dobaPoKtereZhasneLed);
+    timer_strobe_Led_ON.set(dobaPoKtereRozsvitiLed);
+    timer_strobe_Led_OFF.set(dobaPoKtereZhasneLed);
   }
   else if(prijato=='p')
   {
@@ -144,30 +139,29 @@ void loop() {
 
   }
 
+//Rozsviceni SYNCHRONIZACNI LED PO DOBE
+    //if ((millis() - cas_zacatku_mereni) > dobaPoKtereZhasneLed)
+    if(timer_strobe_Led_ON.expired())
+    {
+      digitalWrite(strobe_led, HIGH);
+      synchronizace=1;
+    }
+
 //ZHASNUTI SYNCHRONIZACNI LED PO DOBE
   //if ((millis() - cas_zacatku_mereni) > dobaPoKtereZhasneLed)
-  if(timer_led.expired())
+  if(timer_strobe_Led_OFF.expired())
   {
     digitalWrite(strobe_led, LOW);
     synchronizace=0;
   }
 
-  if ((millis() - cas_zacatku_mereni) > casMereni) //celkova doba pro mereni
-  {
-   // flag_merit = 0;
-//    digitalWrite(mereni_led, LOW);
-  }
-
   // pokud je rozdíl posledního uloženého času a aktuálního
-
-
   //if ( (uplynulyCas > periodaMereni) && flag_merit  )
   if ( (timer.expired()) && flag_merit  )
   {
     unsigned long uplynulyCas = (millis() - staryCas);
 
     unsigned long tmp_celkova_delka_pulzu;
-
 
     do                              //bezpecne predani hodnot z pulzru, tak aby nedoslo zrovna ke zmene
     {                               //hodnoty, pri predavani nebo vypoctu a neni potreba zakazovat preruseni
@@ -248,10 +242,8 @@ void loop() {
 /*
     char tmp_cpp[6];
     ltoa(celkovy_pocet_pulzu, tmp_cpp, 5);
-
     char tmp_delka[8];
     itoa(delka, tmp_delka, 7);
-
     char del_rych_tmp[7];
     dtostrf(tmp_delkova_rychlost, 4, 2, del_rych_tmp);
     char delka_tmp[7];
@@ -275,20 +267,6 @@ void loop() {
 
                                   );
 
-
-/*
-    Serial.print(tmp);
-    Serial.print(celkovy_pocet_pulzu);
-    Serial.print(";");
-    Serial.print((double)delka/1000);
-    Serial.print(";");
-    Serial.print(tmp_delkova_rychlost);
-    Serial.print(";");
-    Serial.println(rychlost);
-*/
-
-    //Serial.println(tmp_cpp);
-
     // uložení aktuálního času pro zahájení dalšího měření
     staryCas = millis();
 
@@ -308,18 +286,7 @@ void loop() {
     }
 
   }
-/*
-  if(flag_merit)
-  {
-    digitalWrite(mereni_led, HIGH);
-    analogWrite(motor, velikost_pwm);
-  }
-  else
-  {
-    digitalWrite(mereni_led, LOW);
-    analogWrite(motor, 0);
-  }
-*/
+
   stav_tlacitko_previjeni = digitalRead(tlacitko_previjeni);
 
   if(flag_merit)
@@ -344,14 +311,12 @@ void loop() {
 
 /*
   stav_tlacitko_stop = digitalRead(tlacitko_stop);
-
   // kontrola stisku tlačítka a stavu proměnné povolení
   if(stav_tlacitko_stop == LOW  &&  povolen_stisk == 1)
   {
     stisknuto = HIGH;
     Serial.println("STOP");
   }
-
   // pokud je stisknuto, do proměnné cas_stisku_tlacitka se uloží čas stisku a zakáže se další stisknutí
   if(stisknuto == HIGH )
   {
@@ -359,7 +324,6 @@ void loop() {
     povolen_stisk = 0;
     stisknuto = LOW;
   }
-
   // pokud je při zákazu stisku naměřen rozdíl času stisku a momentálního času větší jak 1000 ms = 1 s,
   // tak je povolen další stisk
   if(povolen_stisk == 0)

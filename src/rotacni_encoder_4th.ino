@@ -109,6 +109,9 @@ void setup() {
   //attachInterrupt(pinPreruseni, prictiPulz, FALLING);
   attachInterrupt(pinPreruseni, prictiPulz, CHANGE);
   attachInterrupt(pinPreruseniB, prictiPulz, CHANGE);
+
+  digitalWrite(strobe_led, LOW);
+  
 }
 void loop() {
 
@@ -140,20 +143,33 @@ void loop() {
   }
 
 //Rozsviceni SYNCHRONIZACNI LED PO DOBE
-    //if ((millis() - cas_zacatku_mereni) > dobaPoKtereZhasneLed)
-    if(timer_strobe_Led_ON.expired())
+//if(timer_strobe_Led_ON.expired())
+    if (flag_merit == 1 &&
+      ((millis() - cas_zacatku_mereni) > dobaPoKtereRozsvitiLed) &&
+      ((millis() - cas_zacatku_mereni) < dobaPoKtereZhasneLed))
     {
       digitalWrite(strobe_led, HIGH);
       synchronizace=1;
+      //Serial.println("synch 1");
     }
+    else
+    {
+      digitalWrite(strobe_led, LOW);
+      synchronizace=0;
+      //Serial.println("synch 0");
+    }
+
 
 //ZHASNUTI SYNCHRONIZACNI LED PO DOBE
   //if ((millis() - cas_zacatku_mereni) > dobaPoKtereZhasneLed)
+/*
   if(timer_strobe_Led_OFF.expired())
   {
     digitalWrite(strobe_led, LOW);
     synchronizace=0;
+    Serial.println("synch 0");
   }
+*/
 
   // pokud je rozdíl posledního uloženého času a aktuálního
   //if ( (uplynulyCas > periodaMereni) && flag_merit  )
